@@ -1,5 +1,6 @@
 const morgan = require("morgan");
 const express = require("express");
+const cors = require("cors");
 const app = express();
 
 const phonebook = [
@@ -9,8 +10,8 @@ const phonebook = [
   { id: "4", name: "Mary Poppendieck", number: "39-23-6423122" },
 ];
 
+app.use(cors());
 app.use(morgan("tiny"));
-
 app.use(express.json());
 
 morgan.token("body", (req) => {
@@ -77,7 +78,8 @@ app.post("/api/persons", (req, res) => {
   res.status(201).json(newPerson);
 });
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
+
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });
