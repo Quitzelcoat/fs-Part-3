@@ -19,7 +19,7 @@ app.use(
   morgan(":method :url :status :res[content-length] - :response-time ms :body")
 );
 
-app.get("/api/persons", (req, res) => {
+app.get("/api/persons", (req, res, next) => {
   Person.find({})
     .then((persons) => {
       if (persons) {
@@ -28,13 +28,10 @@ app.get("/api/persons", (req, res) => {
         res.status(404).end();
       }
     })
-    .catch((error) => {
-      console.log(error);
-      res.status(500).end();
-    });
+    .catch((error) => next(error));
 });
 
-app.post("/api/persons", (req, res) => {
+app.post("/api/persons", (req, res, next) => {
   const body = req.body;
 
   if (body.name === undefined) {
@@ -51,10 +48,7 @@ app.post("/api/persons", (req, res) => {
     .then((savedPerson) => {
       res.json(savedPerson);
     })
-    .catch((error) => {
-      console.log(error);
-      res.status(500).json({ error: "failed to save person" });
-    });
+    .catch((error) => next(error));
 });
 
 app.delete("/api/persons/:id", (req, res, next) => {
@@ -62,11 +56,36 @@ app.delete("/api/persons/:id", (req, res, next) => {
     .then((result) => {
       res.status(204).end();
     })
-    .catch((error) => {
-      console.log(error);
-      res.status(400).json({ error: "failed to delete id" });
-    });
+    .catch((error) => next(error));
 });
+
+app.put("/api/persons/:id", (req, res, next) => {
+  const { id } = req.body;
+  const { number } = req.body;
+
+  Person.findByIdAndUpdate(id, { number }, { new: true })
+    .then((updatedPerson) => {
+      if (updatedPerson) {
+        res.json(updatedPerson);
+      } else {
+        res.status(404).end();
+      }
+    })
+    .catch((error) => next(error));
+});
+
+const errorHandler = (error, req, res, next) => {
+  console.error(error.message);
+
+  if (error.name === "CastError") {
+    return res.status(400).send({ error: "malformatted id" });
+  }
+
+  next(error);
+};
+
+// this has to be the last loaded middleware, also all the routes should be registered before this!
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 3000;
 
