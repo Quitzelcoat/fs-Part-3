@@ -61,9 +61,13 @@ app.delete("/api/persons/:id", (req, res, next) => {
 
 app.put("/api/persons/:id", (req, res, next) => {
   const { id } = req.body;
-  const { number } = req.body;
+  const { name, number } = req.body;
 
-  Person.findByIdAndUpdate(id, { number }, { new: true })
+  Person.findByIdAndUpdate(
+    id,
+    { name, number },
+    { new: true, runValidators: true, context: "query" }
+  )
     .then((updatedPerson) => {
       if (updatedPerson) {
         res.json(updatedPerson);
@@ -74,17 +78,41 @@ app.put("/api/persons/:id", (req, res, next) => {
     .catch((error) => next(error));
 });
 
+app.get("/api/persons/:id", (req, res, next) => {
+  const { id } = req.params.id;
+  Person.findById(id)
+    .then((person) => {
+      if (person) {
+        res.json(person);
+      } else {
+        res.status(404).end();
+      }
+    })
+    .catch((error) => next(error));
+});
+
+app.get("/info", (req, res, next) => {
+  Person.find()
+    .then((personEntry) => {
+      res.send(
+        `Phonebook has info for ${personEntry.length} people.\n ${Date()}`
+      );
+    })
+    .catch((error) => next(error));
+});
+
 const errorHandler = (error, req, res, next) => {
   console.error(error.message);
 
   if (error.name === "CastError") {
     return res.status(400).send({ error: "malformatted id" });
+  } else if (error.name === "ValidationError") {
+    return res.status(400).json({ error: error.message });
   }
 
   next(error);
 };
 
-// this has to be the last loaded middleware, also all the routes should be registered before this!
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 3000;

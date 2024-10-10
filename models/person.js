@@ -18,7 +18,11 @@ mongoose
   });
 
 const personSchema = new mongoose.Schema({
-  name: String,
+  name: {
+    type: string,
+    minLength: 3,
+    require: true,
+  },
   number: string,
 });
 
