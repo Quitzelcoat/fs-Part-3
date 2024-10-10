@@ -20,9 +20,18 @@ app.use(
 );
 
 app.get("/api/persons", (req, res) => {
-  Person.find({}).then((persons) => {
-    res.json(persons);
-  });
+  Person.find({})
+    .then((persons) => {
+      if (persons) {
+        res.json(persons);
+      } else {
+        res.status(404).end();
+      }
+    })
+    .catch((error) => {
+      console.log(error);
+      res.status(500).end();
+    });
 });
 
 app.post("/api/persons", (req, res) => {
@@ -37,9 +46,26 @@ app.post("/api/persons", (req, res) => {
     number: body.number,
   });
 
-  person.save().then((savedPerson) => {
-    res.json(savedPerson);
-  });
+  person
+    .save()
+    .then((savedPerson) => {
+      res.json(savedPerson);
+    })
+    .catch((error) => {
+      console.log(error);
+      res.status(500).json({ error: "failed to save person" });
+    });
+});
+
+app.delete("/api/persons/:id", (req, res, next) => {
+  Person.findByIdAndDelete(req.params.id)
+    .then((result) => {
+      res.status(204).end();
+    })
+    .catch((error) => {
+      console.log(error);
+      res.status(400).json({ error: "failed to delete id" });
+    });
 });
 
 const PORT = process.env.PORT || 3000;
